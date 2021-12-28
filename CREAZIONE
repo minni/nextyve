@@ -1,0 +1,83 @@
+CREAZIONE
+
+composer create-project -s dev laminas/laminas-mvc-skeleton nextyve
+- Do you want a minimal install (no optional packages)? n
+- Would you like to install the developer toolbar? y
+- Would you like to install caching support? y
+- Would you like to install database support (installs laminas-db)? y
+- Would you like to install forms support? y
+- Would you like to install JSON de/serialization support? y
+- Would you like to install logging support? y
+- Would you like to install command-line interface support? y
+- Would you like to install i18n support? y
+- Would you like to install the official MVC plugins, including PRG support, identity, and flash messages? y
+- Would you like to use the PSR-7 middleware dispatcher? y
+- Would you like to install sessions support? y
+- Would you like to install MVC testing tools for testing support? n
+- Would you like to install the laminas-di for laminas-servicemanager? n
+
+==> ATTENZIONE: You are now in development mode.
+-> php bin/update-gitignore.php
+-> php -r 'if (file_exists("bin/remove-package-artifacts.php")) include "bin/remove-package-artifacts.php";'
+-> php -r 'if (file_exists("CHANGELOG.md")) unlink("CHANGELOG.md");'
+
+in public/index aggiungo
+  if (!defined('APPLICATION_ENV')) {
+      define('APPLICATION_ENV', (getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'production'));
+  }
+  if ($_SERVER['APPLICATION_ENV'] === 'development') {
+      error_reporting(E_ALL & ~E_USER_NOTICE & ~E_NOTICE);
+      ini_set("display_errors", '1');
+  }
+e sostituisco
+  // if (file_exists(__DIR__ . '/../config/development.config.php')) {
+  if (file_exists(__DIR__ . '/../config/development.config.php') && $_SERVER['APPLICATION_ENV'] === 'development') {
+
+quindi in module/application/config/config.php aggiungo
+  use Laminas\Db\Adapter\AdapterInterface;
+  use Laminas\Db\ResultSet\ResultSet;
+  use Laminas\Db\TableGateway\TableGateway;
+  $db = [
+    'driver'      => 'oci8',
+    'username'      => 'wwwu',
+    'password'      => 'frsutf8',
+    'connection_string' => 'NQ3',
+    'charset'       => 'utf8',
+    'persistent'    => 'true',
+  ];
+  if (APPLICATION_ENV == 'development') {
+    $db = [
+      'driver'      => 'oci8',
+      'username'      => 'wwwu_test',
+      'password'      => 'frstestutf8',
+      'connection_string' => 'NQ3',
+      'charset'       => 'utf8',
+      'persistent'  => 'true',
+    ];
+  }
+  [....]
+  'db' => $db,
+  controllers' => [
+    'factories' => [
+      Controller\IndexController::class => function($container) {
+        $db = $container->get(AdapterInterface::class);
+        return new Controller\IndexController($db);
+      },
+
+e nell'IndexController.php
+  public function __construct($db){
+    $this->db = $db;
+  }
+in manira da poter usare sempre la connessione al db
+
+sempre nell'IndexController.php
+  // ESEGUITA PRIMA DI OGNI AZIONE  
+  function onDispatch(\Zend\Mvc\MvcEvent $e){
+    $this->layout('layout/bs4_simplified');
+    $this->layout()->setVariable('path', '');
+    $this->layout()->setVariable('menu', false);
+    $this->layout()->setVariable('title', 'Autenticazione SPID');
+    ...
+    parent::onDispatch($e);
+  }
+
